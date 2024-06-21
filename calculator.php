@@ -1,9 +1,9 @@
 <?php
 
-//Code to read and write the entire input as a single string
+// Code to read and write the entire input as a single string
 $input = trim(readline("(input) "));
 
-// Use regular expression to match number, operator, number format or sqrt number format
+// Define a regular expression pattern to match number, operator, number format or sqrt number format
 if (!preg_match('/^\s*(\d+(\.\d+)?)\s*([+\-*\/]|sqrt)\s*(\d+(\.\d+)?)?\s*$/', $input, $matches)) {
     echo "Invalid input format. Please use the format: number operator number or sqrt number" . PHP_EOL;
     exit(1);
@@ -17,7 +17,7 @@ $num2 = isset($matches[4]) ? floatval($matches[4]) : null;
 // Initialize result variable
 $result = null;
 
-// Codes to perform calculations based on the operator
+// Perform calculations based on the operator
 switch ($operator) {
     case '+':
         $result = $num1 + $num2;
@@ -51,7 +51,7 @@ switch ($operator) {
 if ($operator == 'sqrt') {
     echo "(output) $result" . PHP_EOL;
 } else {
-    echo "Result: $result" . PHP_EOL;
+    echo "(output) $result" . PHP_EOL;
 }
 
 ?>
