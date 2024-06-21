@@ -17,7 +17,7 @@ $num2 = isset($matches[4]) ? floatval($matches[4]) : null;
 // Initialize result variable
 $result = null;
 
-// Perform calculations based on the operator
+// Codes to perform calculations based on the operator
 switch ($operator) {
     case '+':
         $result = $num1 + $num2;
