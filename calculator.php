@@ -12,9 +12,10 @@ function evaluateExpression($input) {
     $tokens = $matches[0];
 
     // Initialize variables
-    $result = null;
+    $result = 0;
     $current_number = null;
     $last_operator = '+';
+    $sqrt_flag = false;
 
     // Process each token
     foreach ($tokens as $token) {
@@ -24,6 +25,7 @@ function evaluateExpression($input) {
         } elseif (preg_match('/^sqrt\s*(\d+(\.\d+)?)$/', $token, $sqrt_match)) {
             // If token matches sqrt followed by a number, perform sqrt operation
             $current_number = sqrt(floatval($sqrt_match[1]));
+            $sqrt_flag = true; // Set flag for sqrt operation
         } else {
             // If token is an operator (+, -, *, /), perform operation according to MDAS rule
             switch ($token) {
@@ -39,32 +41,32 @@ function evaluateExpression($input) {
                     $last_operator = $token;
                     break;
                 case '*':
-                    // Update result immediately with multiplication
-                    if ($result === null) {
-                        $result = $current_number;
-                    } elseif ($last_operator == '+') {
-                        $result += $current_number;
-                    } elseif ($last_operator == '-') {
-                        $result -= $current_number;
-                    } else {
-                        $result *= $current_number;
-                    }
-                    break;
                 case '/':
-                    // Handle division by zero
-                    if ($current_number == 0) {
-                        echo "Error: Division by zero." . PHP_EOL;
-                        exit(1);
-                    }
-                    // Update result immediately with division
-                    if ($result === null) {
-                        $result = $current_number;
-                    } elseif ($last_operator == '+') {
-                        $result += $current_number;
-                    } elseif ($last_operator == '-') {
-                        $result -= $current_number;
+                    // Handle multiplication and division with sqrt precedence
+                    if ($sqrt_flag) {
+                        $current_number = $last_operator == '-' ? -$current_number : $current_number;
+                        $result = $token == '*' ? $result * $current_number : $result / $current_number;
+                        $sqrt_flag = false;
                     } else {
-                        $result /= $current_number;
+                        // No sqrt precedence, apply MDAS directly
+                        switch ($last_operator) {
+                            case '+':
+                                $result += $current_number;
+                                break;
+                            case '-':
+                                $result -= $current_number;
+                                break;
+                            case '*':
+                                $result *= $current_number;
+                                break;
+                            case '/':
+                                $result /= $current_number;
+                                break;
+                            default:
+                                break;
+                        }
+                        // Update last operator
+                        $last_operator = $token;
                     }
                     break;
                 default:
@@ -78,9 +80,7 @@ function evaluateExpression($input) {
     }
 
     // Final evaluation of any remaining operation
-    if ($result === null) {
-        $result = $current_number;
-    } else {
+    if ($current_number !== null) {
         switch ($last_operator) {
             case '+':
                 $result += $current_number;
@@ -92,11 +92,6 @@ function evaluateExpression($input) {
                 $result *= $current_number;
                 break;
             case '/':
-                // Handle division by zero
-                if ($current_number == 0) {
-                    echo "Error: Division by zero." . PHP_EOL;
-                    exit(1);
-                }
                 $result /= $current_number;
                 break;
             default:
