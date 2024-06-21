@@ -1,6 +1,6 @@
 <?php
 
-// Function to evaluate the mathematical expression
+// Function to evaluate the mathematical expression following MDAS rule
 function evaluateExpression($input) {
     // Define a regular expression pattern to match number, operator, or sqrt number format
     if (!preg_match_all('/\b(?:\d+(\.\d+)?|sqrt\s*\d+(\.\d+)?)\b|[+\-*\/]/', $input, $matches)) {
@@ -12,7 +12,7 @@ function evaluateExpression($input) {
     $tokens = $matches[0];
 
     // Initialize variables
-    $result = 0;
+    $result = null;
     $current_number = null;
     $last_operator = '+';
     $sqrt_flag = false;
@@ -31,24 +31,8 @@ function evaluateExpression($input) {
             switch ($token) {
                 case '+':
                 case '-':
-                    // Evaluate previous operation and update result
-                    if ($last_operator == '+') {
-                        $result += $current_number;
-                    } elseif ($last_operator == '-') {
-                        $result -= $current_number;
-                    }
-                    // Update last operator
-                    $last_operator = $token;
-                    break;
-                case '*':
-                case '/':
-                    // Handle multiplication and division with sqrt precedence
-                    if ($sqrt_flag) {
-                        $current_number = $last_operator == '-' ? -$current_number : $current_number;
-                        $result = $token == '*' ? $result * $current_number : $result / $current_number;
-                        $sqrt_flag = false;
-                    } else {
-                        // No sqrt precedence, apply MDAS directly
+                    // Apply previous operation if there is a pending operation and update result
+                    if ($current_number !== null) {
                         switch ($last_operator) {
                             case '+':
                                 $result += $current_number;
@@ -60,6 +44,48 @@ function evaluateExpression($input) {
                                 $result *= $current_number;
                                 break;
                             case '/':
+                                if ($current_number == 0) {
+                                    echo "Division by zero error" . PHP_EOL;
+                                    exit(1);
+                                }
+                                $result /= $current_number;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    // Update last operator
+                    $last_operator = $token;
+                    // Reset current number
+                    $current_number = null;
+                    // Reset sqrt flag
+                    $sqrt_flag = false;
+                    break;
+                case '*':
+                case '/':
+                    // Directly apply multiplication and division rules
+                    if ($sqrt_flag) {
+                        $current_number = $last_operator == '-' ? -$current_number : $current_number;
+                        $result = $token == '*' ? $result * $current_number : ($result / $current_number);
+                        $sqrt_flag = false;
+                    } else {
+                        // Evaluate pending multiplication and division before updating last operator
+                        switch ($last_operator) {
+                            case '+':
+                                $result += $current_number;
+                                break;
+                            case '-':
+                                $result -= $current_number;
+                                break;
+                            case '*':
+                                $result *= $current_number;
+                                break;
+                            case '/':
+                                if ($current_number == 0) {
+                                    echo "Division by zero error" . PHP_EOL;
+                                    exit(1);
+                                }
                                 $result /= $current_number;
                                 break;
                             default:
@@ -68,14 +94,13 @@ function evaluateExpression($input) {
                         // Update last operator
                         $last_operator = $token;
                     }
+                    // Reset current number
+                    $current_number = null;
                     break;
                 default:
                     echo "Invalid operator" . PHP_EOL;
                     exit(1);
             }
-
-            // Reset current number for next iteration
-            $current_number = null;
         }
     }
 
@@ -92,6 +117,10 @@ function evaluateExpression($input) {
                 $result *= $current_number;
                 break;
             case '/':
+                if ($current_number == 0) {
+                    echo "Division by zero error" . PHP_EOL;
+                    exit(1);
+                }
                 $result /= $current_number;
                 break;
             default:
