@@ -12,123 +12,85 @@ function evaluateExpression($input) {
     $tokens = $matches[0];
 
     // Initialize variables
-    $result = null;
+    $current_result = 0;
     $current_number = null;
     $last_operator = '+';
-    $sqrt_flag = false;
+    $temp_result = null;
+    $temp_operator = null;
 
     // Process each token
     foreach ($tokens as $token) {
         if (is_numeric($token)) {
-            // If token is a number, update current_number
             $current_number = floatval($token);
-        } elseif (preg_match('/^sqrt\s*(\d+(\.\d+)?)$/', $token, $sqrt_match)) {
-            // If token matches sqrt followed by a number, perform sqrt operation
-            $current_number = sqrt(floatval($sqrt_match[1]));
-            $sqrt_flag = true; // Set flag for sqrt operation
-        } else {
-            // If token is an operator (+, -, *, /), perform operation according to MDAS rule
-            switch ($token) {
-                case '+':
-                case '-':
-                    // Apply previous operation if there is a pending operation and update result
-                    if ($current_number !== null) {
-                        switch ($last_operator) {
-                            case '+':
-                                $result += $current_number;
-                                break;
-                            case '-':
-                                $result -= $current_number;
-                                break;
-                            case '*':
-                                $result *= $current_number;
-                                break;
-                            case '/':
-                                if ($current_number == 0) {
-                                    echo "Division by zero error" . PHP_EOL;
-                                    exit(1);
-                                }
-                                $result /= $current_number;
-                                break;
-                            default:
-                                break;
-                        }
+            if ($temp_operator) {
+                if ($temp_operator == '*') {
+                    $temp_result *= $current_number;
+                } elseif ($temp_operator == '/') {
+                    if ($current_number == 0) {
+                        echo "Division by zero error" . PHP_EOL;
+                        exit(1);
                     }
-
-                    // Update last operator
-                    $last_operator = $token;
-                    // Reset current number
-                    $current_number = null;
-                    // Reset sqrt flag
-                    $sqrt_flag = false;
-                    break;
-                case '*':
-                case '/':
-                    // Directly apply multiplication and division rules
-                    if ($sqrt_flag) {
-                        $current_number = $last_operator == '-' ? -$current_number : $current_number;
-                        $result = $token == '*' ? $result * $current_number : ($result / $current_number);
-                        $sqrt_flag = false;
-                    } else {
-                        // Evaluate pending multiplication and division before updating last operator
-                        switch ($last_operator) {
-                            case '+':
-                                $result += $current_number;
-                                break;
-                            case '-':
-                                $result -= $current_number;
-                                break;
-                            case '*':
-                                $result *= $current_number;
-                                break;
-                            case '/':
-                                if ($current_number == 0) {
-                                    echo "Division by zero error" . PHP_EOL;
-                                    exit(1);
-                                }
-                                $result /= $current_number;
-                                break;
-                            default:
-                                break;
-                        }
-                        // Update last operator
-                        $last_operator = $token;
-                    }
-                    // Reset current number
-                    $current_number = null;
-                    break;
-                default:
-                    echo "Invalid operator" . PHP_EOL;
-                    exit(1);
-            }
-        }
-    }
-
-    // Final evaluation of any remaining operation
-    if ($current_number !== null) {
-        switch ($last_operator) {
-            case '+':
-                $result += $current_number;
-                break;
-            case '-':
-                $result -= $current_number;
-                break;
-            case '*':
-                $result *= $current_number;
-                break;
-            case '/':
-                if ($current_number == 0) {
-                    echo "Division by zero error" . PHP_EOL;
-                    exit(1);
+                    $temp_result /= $current_number;
                 }
-                $result /= $current_number;
-                break;
-            default:
-                break;
+                $current_number = $temp_result;
+                $temp_result = null;
+                $temp_operator = null;
+            }
+        } elseif (preg_match('/^sqrt\s*(\d+(\.\d+)?)$/', $token, $sqrt_match)) {
+            $current_number = sqrt(floatval($sqrt_match[1]));
+            if ($temp_operator) {
+                if ($temp_operator == '*') {
+                    $temp_result *= $current_number;
+                } elseif ($temp_operator == '/') {
+                    if ($current_number == 0) {
+                        echo "Division by zero error" . PHP_EOL;
+                        exit(1);
+                    }
+                    $temp_result /= $current_number;
+                }
+                $current_number = $temp_result;
+                $temp_result = null;
+                $temp_operator = null;
+            }
+        } elseif ($token == '*' || $token == '/') {
+            if ($temp_result === null) {
+                $temp_result = $current_number;
+            } else {
+                if ($temp_operator == '*') {
+                    $temp_result *= $current_number;
+                } elseif ($temp_operator == '/') {
+                    if ($current_number == 0) {
+                        echo "Division by zero error" . PHP_EOL;
+                        exit(1);
+                    }
+                    $temp_result /= $current_number;
+                }
+            }
+            $temp_operator = $token;
+            $current_number = null;
+        } elseif (in_array($token, ['+', '-'])) {
+            if ($last_operator == '+') {
+                $current_result += $current_number;
+            } elseif ($last_operator == '-') {
+                $current_result -= $current_number;
+            }
+            $last_operator = $token;
+            $current_number = null;
+        } else {
+            echo "Invalid token: $token" . PHP_EOL;
+            exit(1);
         }
     }
 
-    return $result;
+    if ($current_number !== null) {
+        if ($last_operator == '+') {
+            $current_result += $current_number;
+        } elseif ($last_operator == '-') {
+            $current_result -= $current_number;
+        }
+    }
+
+    return $current_result;
 }
 
 // Read input from user
