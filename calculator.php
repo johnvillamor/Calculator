@@ -16,6 +16,7 @@ function evaluateExpression($input) {
     $current_number = null;
     $last_operator = '+';
     $last_precedence = 0;
+    $pending_operand = false; // Flag to handle unary minus
 
     // Process each token
     foreach ($tokens as $token) {
@@ -26,18 +27,39 @@ function evaluateExpression($input) {
             // If token matches sqrt followed by a number, perform sqrt operation
             $current_number = sqrt(floatval($sqrt_match[1]));
         } else {
-            // If token is an operator (+, -, *, /), perform operation according to precedence
+            // If token is an operator (+, -, *, /), determine precedence and associativity
             $current_operator = $token;
 
             // Determine precedence of current operator
-            if ($current_operator == '*' || $current_operator == '/') {
-                $current_precedence = 2;
-            } else {
-                $current_precedence = 1;
+            switch ($current_operator) {
+                case '+':
+                case '-':
+                    $current_precedence = 1;
+                    break;
+                case '*':
+                case '/':
+                    $current_precedence = 2;
+                    break;
+                default:
+                    $current_precedence = 0; // Assume no precedence for non-operator tokens
+                    break;
             }
 
-            // Evaluate the expression if current operator has higher precedence or if it's the end of the expression
-            if ($current_precedence > $last_precedence || $current_operator == null) {
+            // Handle unary minus (negative numbers)
+            if ($current_operator == '-' && !$pending_operand) {
+                // Check if the previous token is an operator or it's the start of the expression
+                if ($last_operator == null || in_array($last_operator, ['+', '-', '*', '/'])) {
+                    $current_number = -$current_number;
+                    $pending_operand = true;
+                    continue; // Skip further processing for this token
+                }
+            } else {
+                $pending_operand = false;
+            }
+
+            // Evaluate the expression based on precedence and associativity
+            if ($current_precedence > $last_precedence) {
+                // Higher precedence operator, perform the operation immediately
                 switch ($last_operator) {
                     case '+':
                         $result += $current_number;
@@ -58,18 +80,18 @@ function evaluateExpression($input) {
                     default:
                         break;
                 }
-                $last_operator = $current_operator;
-                $last_precedence = $current_precedence;
-                $current_number = null;
             } else {
-                // Update last operator and continue to next token
+                // Lower or equal precedence operator, delay the operation
                 $last_operator = $current_operator;
                 $last_precedence = $current_precedence;
             }
+
+            // Reset current number for next iteration
+            $current_number = null;
         }
     }
 
-    // Final evaluation of the last operation
+    // Final evaluation of any remaining operation
     switch ($last_operator) {
         case '+':
             $result += $current_number;
