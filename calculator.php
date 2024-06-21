@@ -17,7 +17,7 @@ function evaluateExpression($input) {
     $current_number = null;
     $perform_sqrt = false;
 
-    // Process each token
+    // Code for processing each token
     foreach ($tokens as $token) {
         if (is_numeric($token)) {
             // If token is a number, update current_number
