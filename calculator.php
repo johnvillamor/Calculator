@@ -1,37 +1,57 @@
 <?php
 
-//Variable declarations
-$num1 = readline("Enter first number: ");
-$operator = readline("Choose an operator (+, -, *, /, sqrt): ");
+//Code to read and write the entire input as a single string
+$input = trim(readline("(input) "));
 
-//Condition if you choose the sqrt operator
-if ($operator == 'sqrt') {
-    $result = sqrt($num1);
-} else {
-    $num2 = readline("Enter second number: ");
-    
-//Conditions for +, -, *, / operators
-    if ($operator == '+') {
+// Use regular expression to match number, operator, number format or sqrt number format
+if (!preg_match('/^\s*(\d+(\.\d+)?)\s*([+\-*\/]|sqrt)\s*(\d+(\.\d+)?)?\s*$/', $input, $matches)) {
+    echo "Invalid input format. Please use the format: number operator number or sqrt number" . PHP_EOL;
+    exit(1);
+}
+
+// Extract components from matches
+$num1 = floatval($matches[1]);
+$operator = $matches[3];
+$num2 = isset($matches[4]) ? floatval($matches[4]) : null;
+
+// Initialize result variable
+$result = null;
+
+// Perform calculations based on the operator
+switch ($operator) {
+    case '+':
         $result = $num1 + $num2;
-    } else if ($operator == '-') {
+        break;
+    case '-':
         $result = $num1 - $num2;
-    } else if ($operator == '*') {
+        break;
+    case '*':
         $result = $num1 * $num2;
-    } else if ($operator == '/') {
-
- //Condition if the number is divided by zero       
+        break;
+    case '/':
         if ($num2 == 0) {
-            echo "Error: Division by zero.";
+            echo "Error: Division by zero." . PHP_EOL;
             exit(1);
         }
         $result = $num1 / $num2;
-
- //Condition if the operators entered invalid           
-    } else {
-        echo "Invalid operator";
+        break;
+    case 'sqrt':
+        if ($num1 < 0) {
+            echo "Error: Cannot calculate square root of a negative number." . PHP_EOL;
+            exit(1);
+        }
+        $result = sqrt($num1);
+        break;
+    default:
+        echo "Invalid operator" . PHP_EOL;
         exit(1);
-    }
 }
 
-echo $result;
+// Output the result
+if ($operator == 'sqrt') {
+    echo "(output) $result" . PHP_EOL;
+} else {
+    echo "Result: $result" . PHP_EOL;
+}
+
 ?>
